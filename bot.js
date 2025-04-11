@@ -1,43 +1,3 @@
-vikas@192.168.159.130's password:
-Welcome to Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-57-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/pro
-
- System information as of Fri Apr 11 11:21:48 AM UTC 2025
-
-  System load:  3.24               Processes:              279
-  Usage of /:   30.1% of 47.93GB   Users logged in:        1
-  Memory usage: 60%                IPv4 address for ens32: 192.168.159.130
-  Swap usage:   0%
-
- * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
-   just raised the bar for easy, resilient and secure K8s cluster deployment.
-
-   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
-
-Expanded Security Maintenance for Applications is not enabled.
-
-0 updates can be applied immediately.
-
-Enable ESM Apps to receive additional future security updates.
-See https://ubuntu.com/esm or run: sudo pro status
-
-
-Last login: Fri Apr 11 05:45:04 2025 from 192.168.159.1
-vikas@vikas:~$ sudo -i
-[sudo] password for vikas:
-root@vikas:~# l;s
-7/  chatbot/  hyperbolic/  hyperbolic-bot/  main/  main_7/  test_2/
-s: command not found
-root@vikas:~# cd main_7
-root@vikas:~/main_7# cat bot1.js
-cat: bot1.js: No such file or directory
-root@vikas:~/main_7# ls
-hyperbolic
-root@vikas:~/main_7# cd hyperbolic
-root@vikas:~/main_7/hyperbolic# cat bot1.js
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const LocalSession = require('telegraf-session-local');
@@ -375,4 +335,3 @@ console.log('🤖 Bot is running');
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
-root@vikas:~/main_7/hyperbolic#
