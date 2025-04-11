@@ -25,7 +25,7 @@ nano .env
 ```
 
 ```bash
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_BOT_TOKEN=
 ```
 - ⚡ Run the bot
 ```bash
