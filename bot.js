@@ -1,3 +1,43 @@
+vikas@192.168.159.130's password:
+Welcome to Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-57-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Fri Apr 11 11:21:48 AM UTC 2025
+
+  System load:  3.24               Processes:              279
+  Usage of /:   30.1% of 47.93GB   Users logged in:        1
+  Memory usage: 60%                IPv4 address for ens32: 192.168.159.130
+  Swap usage:   0%
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+
+Last login: Fri Apr 11 05:45:04 2025 from 192.168.159.1
+vikas@vikas:~$ sudo -i
+[sudo] password for vikas:
+root@vikas:~# l;s
+7/  chatbot/  hyperbolic/  hyperbolic-bot/  main/  main_7/  test_2/
+s: command not found
+root@vikas:~# cd main_7
+root@vikas:~/main_7# cat bot1.js
+cat: bot1.js: No such file or directory
+root@vikas:~/main_7# ls
+hyperbolic
+root@vikas:~/main_7# cd hyperbolic
+root@vikas:~/main_7/hyperbolic# cat bot1.js
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const LocalSession = require('telegraf-session-local');
@@ -174,15 +214,33 @@ async function handleModelInput(ctx, input) {
 }
 
 async function processBulkQuestions(ctx) {
+  const total = ctx.session.bulkTotal;
+
   while (ctx.session.bulkQuestions.length > 0) {
     if (ctx.session.stopBulk) {
       await ctx.reply('🛑 Stopped by user.');
       break;
     }
 
-    const currentQuestion = ctx.session.bulkQuestions.shift(); // Remove and get the first question
+    const currentQuestion = ctx.session.bulkQuestions[0]; // Peek at first
     await handleModelInput(ctx, currentQuestion);
-    await delay(Math.floor(Math.random() * (120000 - 60000)) + 60000); // Random delay between 60-120 seconds
+
+    ctx.session.bulkQuestions.shift(); // Remove it after processing
+
+    const remaining = ctx.session.bulkQuestions.length;
+    const answered = Math.max(total - remaining, 0);
+
+    const percent = total > 0 ? Math.round((answered / total) * 100) : 0;
+    const progressBarLength = 10;
+    const filledBlocks = Math.round((percent / 100) * progressBarLength);
+    const emptyBlocks = progressBarLength - filledBlocks;
+    const bar = '▓'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+
+    await ctx.reply(`📊 *Progress Update:*\n\n✅ Answered: ${answered} / ${total}\n📊 Progress: ${bar} ${percent}%`, {
+      parse_mode: 'Markdown'
+    });
+
+    await delay(Math.floor(Math.random() * (120000 - 60000)) + 60000); // Delay 60-120 sec
   }
 
   if (!ctx.session.stopBulk) {
@@ -191,6 +249,7 @@ async function processBulkQuestions(ctx) {
 
   ctx.session.bulkQuestions = [];
 }
+
 
 bot.command('start', (ctx) => {
   if (!ctx.session.apiKey) {
@@ -223,6 +282,7 @@ bot.command('clear', (ctx) => {
 
 bot.command('bulk', (ctx) => {
   ctx.session.bulkQuestions = [];
+  ctx.session.bulkTotal = 0;
   ctx.session.collecting = true;
   ctx.session.stopBulk = false;
   ctx.reply('📝 Please *enter your bulk questions now*, separated by commas. Once finished, press ✅ Done below.', {
@@ -237,23 +297,42 @@ bot.command('stop', (ctx) => {
   ctx.session.stopBulk = true;
   ctx.reply('🛑 Stop request acknowledged.');
 });
-
+  parse_mode: 'Markdown'
 bot.command('status', (ctx) => {
   const apiKeyStatus = ctx.session.apiKey ? '✅ Set' : '❌ Not set';
   const model = ctx.session.selectedModel ? getModelInfo(ctx.session.selectedModel)?.displayName : '❌ Not selected';
-  const bulkCount = ctx.session.bulkQuestions?.length || 0;
+
+  const remaining = ctx.session.bulkQuestions?.length || 0;
+  const total = ctx.session.bulkTotal || ctx.session.bulkQuestions?.length || 0;
+  const answered = Math.max(total - remaining, 0);
+
   const isRunning = ctx.session.stopBulk === false ? '🟢 Running' : '⚪ Not running';
 
-  ctx.reply(`📊 *Status Report:*\n\n🔑 API Key: ${apiKeyStatus}\n🧠 Model: ${model}\n📦 Bulk Questions: ${bulkCount}\n🚀 Bulk Processing: ${isRunning}`, {
+  // Progress bar logic
+  const percent = total > 0 ? Math.round((answered / total) * 100) : 0;
+  const progressBarLength = 10; // Total number of blocks
+  const filledBlocks = Math.round((percent / 100) * progressBarLength);
+  const emptyBlocks = progressBarLength - filledBlocks;
+  const bar = '▓'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+
+  ctx.reply(`📊 *Status Report:*
+
+🔑 API Key: ${apiKeyStatus}
+🧠 Model: ${model}
+✅ Answered: ${answered} / ${total}
+📊 Progress: ${bar} ${percent}%
+🚀 Bulk Processing: ${isRunning}`, {
     parse_mode: 'Markdown'
   });
 });
+
 
 bot.on('text', async (ctx) => {
   if (ctx.session.collecting) {
     const input = ctx.message.text;
     ctx.session.bulkQuestions = input.split(',').map(q => q.trim()).filter(Boolean);
     ctx.reply(`🗂️ ${ctx.session.bulkQuestions.length} questions collected. Click Done when ready.`);
+    ctx.session.bulkTotal = ctx.session.bulkQuestions.length;
   } else if (!ctx.session.apiKey) {
     ctx.session.apiKey = ctx.message.text;
     ctx.reply('✅ API key saved!');
@@ -296,3 +375,4 @@ console.log('🤖 Bot is running');
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+root@vikas:~/main_7/hyperbolic#
