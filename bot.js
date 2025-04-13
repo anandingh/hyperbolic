@@ -3,7 +3,17 @@ const { Telegraf } = require('telegraf');
 const LocalSession = require('telegraf-session-local');
 const axios = require('axios');
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+// Get bot ID and token from .env
+const botId = process.env.TELEGRAM_BOT_ID;
+const token = process.env[`TELEGRAM_BOT_TOKEN_${botId}`];
+
+if (!token) {
+  console.error(`❌ No token found for TELEGRAM_BOT_TOKEN_${botId}`);
+  process.exit(1);
+}
+
+// Initialize bot
+const bot = new Telegraf(token);
 const session = new LocalSession({ getSessionKey: (ctx) => ctx.from?.id.toString() });
 bot.use(session.middleware());
 
