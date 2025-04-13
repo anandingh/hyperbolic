@@ -41,7 +41,7 @@ const models = {
       topP: 0.9
     },
     'qwen': {
-      displayName: '💻 Qwen2.5-Coder-32B-Instruct',
+      displayName: '💻 Coder',
       apiModelName: 'Qwen/Qwen2.5-Coder-32B-Instruct',
       maxTokens: 5400,
       temperature: 0.1,
