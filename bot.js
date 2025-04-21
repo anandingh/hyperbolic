@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const LocalSession = require('telegraf-session-local');
 const axios = require('axios');
+const { loadProgress, saveProgress, clearProgress } = require('./bulkStorage');
 
 // Get bot ID and token from .env
 const botId = process.env.TELEGRAM_BOT_ID;
@@ -41,7 +42,7 @@ const models = {
       topP: 0.9
     },
     'qwen': {
-      displayName: '💻 Coder',
+      displayName: '💻 Qwen2.5-Coder-32B-Instruct',
       apiModelName: 'Qwen/Qwen2.5-Coder-32B-Instruct',
       maxTokens: 5400,
       temperature: 0.1,
@@ -122,7 +123,8 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function handleModelInput(ctx, input) {
   const modelKey = ctx.session.selectedModel;
-  const apiKey = ctx.session.apiKey;
+  const apiKey = process.env[`API_KEY_${botId}`];
+  ctx.session.apiKey = apiKey; // store it in session for consistency
   const modelInfo = getModelInfo(modelKey);
 
   if (!apiKey || !modelKey || !modelInfo) return;
@@ -195,7 +197,8 @@ async function processBulkQuestions(ctx) {
     const currentQuestion = ctx.session.bulkQuestions[0]; // Peek at first
     await handleModelInput(ctx, currentQuestion);
 
-    ctx.session.bulkQuestions.shift(); // Remove it after processing
+    ctx.session.bulkQuestions.shift();
+    saveProgress(ctx.from.id.toString(), ctx.session.bulkQuestions, ctx.session.bulkTotal);
 
     const remaining = ctx.session.bulkQuestions.length;
     const answered = Math.max(total - remaining, 0);
@@ -210,7 +213,7 @@ async function processBulkQuestions(ctx) {
       parse_mode: 'Markdown'
     });
 
-    await delay(Math.floor(Math.random() * (120000 - 60000)) + 60000); // Delay 60-120 sec
+    await delay(Math.floor(Math.random() * (300000 - 120000)) + 120000); // Delay 2-5 minutes
   }
 
   if (!ctx.session.stopBulk) {
@@ -218,16 +221,23 @@ async function processBulkQuestions(ctx) {
   }
 
   ctx.session.bulkQuestions = [];
+  clearProgress(ctx.from.id.toString()); // ✅ Cleanup after success
 }
 
 
-bot.command('start', (ctx) => {
-  if (!ctx.session.apiKey) {
-    ctx.reply('Welcome! Send your Hyperbolic API key to begin.', { parse_mode: 'Markdown' });
-  } else {
+bot.command('start', async (ctx) => {
+      // ✅ Load previous bulk progress if available
+    const userId = ctx.from.id.toString();
+    const saved = loadProgress(userId);
+    if (saved) {
+      ctx.session.bulkQuestions = saved.bulkQuestions;
+      ctx.session.bulkTotal = saved.bulkTotal;
+      await ctx.reply(`📁 Resuming from where you left off...\n${saved.bulkQuestions.length} questions remaining.`);
+    }
+
     showCategorySelection(ctx);
-  }
 });
+
 
 bot.command('help', (ctx) => {
   ctx.reply('📚 Commands:\n/start - Begin\n/switch - Change model\n/bulk - Send questions in bulk\n/stop - Stop bulk\n/remove - Clear key\n/clear - Clear bulk questions', { parse_mode: 'Markdown' });
@@ -247,8 +257,11 @@ bot.command('remove', (ctx) => {
 // Add /clear to clear bulk data
 bot.command('clear', (ctx) => {
   ctx.session.bulkQuestions = [];
+  ctx.session.bulkTotal = 0;
+  clearProgress(ctx.from.id.toString()); // 🧹 clear from disk
   ctx.reply('🗑️ Bulk questions cleared.', { parse_mode: 'Markdown' });
 });
+
 
 bot.command('bulk', (ctx) => {
   ctx.session.bulkQuestions = [];
@@ -303,11 +316,7 @@ bot.on('text', async (ctx) => {
     ctx.session.bulkQuestions = input.split(',').map(q => q.trim()).filter(Boolean);
     ctx.reply(`🗂️ ${ctx.session.bulkQuestions.length} questions collected. Click Done when ready.`);
     ctx.session.bulkTotal = ctx.session.bulkQuestions.length;
-  } else if (!ctx.session.apiKey) {
-    ctx.session.apiKey = ctx.message.text;
-    ctx.reply('✅ API key saved!');
-    showCategorySelection(ctx);
-  } else if (ctx.session.selectedModel) {
+    } else if (ctx.session.selectedModel) {
     await handleModelInput(ctx, ctx.message.text);
   } else {
     ctx.reply('⚠️ Select model first!');
