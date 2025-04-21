@@ -25,7 +25,13 @@ nano .env
 ```
 
 ```bash
-TELEGRAM_BOT_TOKEN=
+TELEGRAM_BOT_TOKEN_1=
+API_KEY_1=
+TELEGRAM_BOT_TOKEN_2=
+API_KEY_2=
+TELEGRAM_BOT_TOKEN_3=
+API_KEY_3=
+
 ```
 - ⚡ Run the bot
 ```bash
