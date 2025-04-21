@@ -213,6 +213,26 @@ bot.command('stop', (ctx) => {
   ctx.reply('🛑 Stop request acknowledged.');
 });
 
+bot.command('status', (ctx) => {
+  const apiKey = process.env[`API_KEY_${botId}`];
+  const maskedKey = apiKey ? `${apiKey.slice(0, 4)}**...**${apiKey.slice(-4)}` : '🔒 Not set';
+  const modelKey = ctx.session.selectedModel;
+  const modelInfo = modelKey ? getModelInfo(modelKey) : null;
+
+  const total = ctx.session.bulkTotal || 0;
+  const remaining = ctx.session.bulkQuestions?.length || 0;
+  const answered = Math.max(total - remaining, 0);
+  const percent = total > 0 ? Math.round((answered / total) * 100) : 0;
+  const bar = '▓'.repeat(Math.round(percent / 10)) + '░'.repeat(10 - Math.round(percent / 10));
+
+  ctx.reply(`📊 *Bot Status:*
+🔐 API Key: ${maskedKey}
+🧠 Model: ${modelInfo ? modelInfo.displayName : '❌ Not selected'}
+✅ Answered: ${answered} / ${total}
+📈 Progress: ${bar} ${percent}%`, { parse_mode: 'Markdown' });
+});
+
+
 bot.on('text', async (ctx) => {
   if (ctx.session.collecting) {
     const input = ctx.message.text;
