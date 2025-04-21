@@ -44,16 +44,39 @@ const models = {
       maxTokens: 11450,
       temperature: 0.7,
       topP: 0.9
+    },
+    'qwen': {
+      displayName: '💻 Qwen2.5-Coder-32B-Instruct',
+      apiModelName: 'Qwen/Qwen2.5-Coder-32B-Instruct',
+      maxTokens: 5400,
+      temperature: 0.1,
+      topP: 0.9
+    } // 👈 this closing brace was missing
+  },
+  image: {
+    'flux': { displayName: '🎨 FLUX.1-dev', apiModelName: 'FLUX.1-dev' },
+    'sd2': { displayName: '🖼️ SD2', apiModelName: 'SD2' },
+    'SDXL1.0-base': { displayName: '🖼️ SDXL1.0-base', apiModelName: 'SDXL1.0-base' },
+    'SD1.5': { displayName: '🖼️ SD1.5', apiModelName: 'SD1.5' },
+    'SSD': { displayName: '🖼️ SSD', apiModelName: 'SSD' },
+    'SDXL-turbo': { displayName: '🖼️ SDXL-turbo', apiModelName: 'SDXL-turbo' }
+  },
+  audio: {
+    'melo_tts': {
+      displayName: '🔊 Melo TTS'
     }
   }
 };
+
 
 const showCategorySelection = (ctx) => {
   ctx.reply('*📂 Choose a category:*', {
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [
-        [{ text: '📝 Text Models', callback_data: 'category_text' }]
+        [{ text: '📝 Text Models', callback_data: 'category_text' }],
+        [{ text: '🖼️ Image Models', callback_data: 'category_image' }],
+        [{ text: '🎧 Audio Models', callback_data: 'category_audio' }]
       ]
     }
   });
