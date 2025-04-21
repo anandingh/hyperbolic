@@ -34,11 +34,25 @@ function getExistingBotCount() {
     console.log('🧹 Cleared existing .env content');
   }
 
-  const botCount = parseInt(await ask('🤖 How many Telegram Bot API keys do you want to enter? '), 10);
-  const usePm2 = (await ask('⚙️  Use PM2 to launch bots? (y/n): ')).toLowerCase() === 'y';
+  const botCount = await ask('🤖 How many Telegram Bot API keys do you want to enter? (Enter 0 to skip): ');
+
+  if (botCount === '0' || botCount.toLowerCase() === 'n') {
+    console.log('🚀 Skipping bot creation. Starting the bot...');
+    exec('node bot.js', (err, stdout, stderr) => {
+      if (err) {
+        console.error(`❌ Bot exited with error:\n`, stderr);
+      } else {
+        console.log(`📤 Bot output:\n`, stdout);
+      }
+    });
+    rl.close();
+    return;
+  }
+
+  const usePm2 = (await ask('⚙️ Use PM2 to launch bots? (y/n): ')).toLowerCase() === 'y';
 
   const tokens = [];
-  for (let i = 0; i < botCount; i++) {
+  for (let i = 0; i < parseInt(botCount, 10); i++) {
     const token = await ask(`🔑 Enter token for bot #${existingCount + i + 1}: `);
     tokens.push(token);
   }
