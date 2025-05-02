@@ -213,7 +213,7 @@ async function processBulkQuestions(ctx) {
       parse_mode: 'Markdown'
     });
 
-    await delay(Math.floor(Math.random() * (300000 - 120000)) + 120000); // Delay 2-5 minutes
+    await delay(120000 + Math.floor(Math.random() * 180000)); // Delay 2-5 minutes
   }
 
   if (!ctx.session.stopBulk) {
